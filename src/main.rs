@@ -678,7 +678,7 @@ impl Game {
         board.reverse();
         for row in board {
             for piece in row {
-                print!("{} ", piece.symbol());
+                print!("\x1b[40;37m{} \x1b[0m", piece.symbol());
             }
             print!("\n");
         }
@@ -1278,18 +1278,18 @@ enum Pieces {
 impl Pieces {
     fn symbol(&self) -> String {
         (match self {
-            Pieces::Rook(true) => "R",
-            Pieces::Rook(false) => "r",
-            Pieces::Bishop(true) => "B",
-            Pieces::Bishop(false) => "b",
-            Pieces::Knight(true) => "N",
-            Pieces::Knight(false) => "n",
-            Pieces::Queen(true) => "Q",
-            Pieces::Queen(false) => "q",
-            Pieces::King(true) => "K",
-            Pieces::King(false) => "k",
-            Pieces::Pawn(true) => "P",
-            Pieces::Pawn(false) => "p",
+            Pieces::Rook(false) => "♖",
+            Pieces::Rook(true) => "♜",
+            Pieces::Bishop(false) => "♗",
+            Pieces::Bishop(true) => "♝",
+            Pieces::Knight(false) => "♘",
+            Pieces::Knight(true) => "♞",
+            Pieces::Queen(false) => "♕",
+            Pieces::Queen(true) => "♛",
+            Pieces::King(false) => "♔",
+            Pieces::King(true) => "♚",
+            Pieces::Pawn(false) => "♙",
+            Pieces::Pawn(true) => "♟",
             Pieces::Empty => " ",
         })
         .to_string()
@@ -1324,7 +1324,7 @@ fn main() {
         println!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         game.display();
         println!(
-            "{}. Turn: {} | Status: {} | Game State: {}",
+            "\x1b[48;5;250;30m{}. Turn: {} | Status: {} | Game State: {}\x1b[0m",
             game.counter,
             if game.turn { "White" } else { "Black" },
             error,
@@ -1343,29 +1343,29 @@ fn main() {
                 error = e;
             });
         } else {
-            let mut mov = String::new();
-            std::io::stdin().read_line(&mut mov).unwrap();
-            if mov.trim().len() == 1 {
-                let promotion = mov.chars().nth(0).unwrap();
-                game.promotion = match promotion {
-                    'q' | 'r' | 'n' | 'b' => promotion,
-                    _ => {
-                        error = "Invalid promotion, try 'q', 'r', 'n', 'b'".to_string();
-                        continue;
-                    }
-                };
-                error = format!("Updated promotion to '{}'", mov.trim());
-                continue;
-            }
+            // let mut mov = String::new();
+            // std::io::stdin().read_line(&mut mov).unwrap();
+            // if mov.trim().len() == 1 {
+            //     let promotion = mov.chars().nth(0).unwrap();
+            //     game.promotion = match promotion {
+            //         'q' | 'r' | 'n' | 'b' => promotion,
+            //         _ => {
+            //             error = "Invalid promotion, try 'q', 'r', 'n', 'b'".to_string();
+            //             continue;
+            //         }
+            //     };
+            //     error = format!("Updated promotion to '{}'", mov.trim());
+            //     continue;
+            // }
 
-            let [i, f] = match Game::parse_move(mov.trim()) {
-                Ok(val) => val,
-                Err(s) => {
-                    error = s;
-                    continue;
-                }
-            };
-            // let [i, f] = game.play_ai(true);
+            // let [i, f] = match Game::parse_move(mov.trim()) {
+            //     Ok(val) => val,
+            //     Err(s) => {
+            //         error = s;
+            //         continue;
+            //     }
+            // };
+            let [i, f] = game.play_ai(true);
             game.move_piece(i, f).unwrap_or_else(|e| {
                 error = e;
             });
