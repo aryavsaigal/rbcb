@@ -143,6 +143,7 @@ impl Game {
                         && i[1] == f[1]
                         && (((f[0] > i[0]) && c) || ((f[0] < i[0]) && !c))
                         && !self.pieces_between(i, f))
+                        && (piece_f == Pieces::Empty)
                         || (((i[1] as isize - f[1] as isize).abs() == 1)
                             && (piece_f != Pieces::Empty)
                             || (self.en_passant
@@ -686,7 +687,11 @@ impl Game {
             self.find_valid_move(*piece)
         });
         let moves_black = self.get_pieces(false).iter().any(|piece| {
-            self.find_valid_move(*piece)
+            if self.find_valid_move(*piece) {
+                println!("{:?}", piece);
+                return true
+            }
+            false
         });
 
         if !moves_white && self.turn {
@@ -978,13 +983,13 @@ fn main() {
     let mut game = Game::new();
     let mut error = String::new();
     let mut game_state = String::new();
+    let mut end = false;
     game.init();
 
-
-    loop {
+    while !end {
         match game.check_game_end() {
             State::Continue | State::WhiteCheck | State::BlackCheck => {}
-            _ => break,
+            _ => end = true,
         }
 
         println!("{esc}[2J{esc}[1;1H", esc = 27 as char);
