@@ -1,3 +1,4 @@
+use rand::seq::IndexedRandom;
 use std::cmp::{max, min};
 
 #[derive(Clone)]
@@ -683,13 +684,14 @@ impl Game {
         let white_check = self.check(king_white, true);
         let black_check = self.check(king_black, false);
 
-        let moves_white = self.get_pieces(true).iter().any(|piece| {
-            self.find_valid_move(*piece)
-        });
+        let moves_white = self
+            .get_pieces(true)
+            .iter()
+            .any(|piece| self.find_valid_move(*piece));
         let moves_black = self.get_pieces(false).iter().any(|piece| {
             if self.find_valid_move(*piece) {
                 println!("{:?}", piece);
-                return true
+                return true;
             }
             false
         });
@@ -697,18 +699,15 @@ impl Game {
         if !moves_white && self.turn {
             if white_check {
                 return State::WhiteCheckmate;
-            }
-            else {
+            } else {
                 return State::WhiteStalemate;
             }
-
         }
 
         if !moves_black && !self.turn {
             if black_check {
                 return State::BlackCheckmate;
-            }
-            else {
+            } else {
                 return State::BlackStalemate;
             }
         }
@@ -768,7 +767,9 @@ impl Game {
                     if y >= 0 && y <= 7 && x >= 0 && x <= 7 {
                         let mut game_copy = self.clone();
 
-                        if let Ok(_) = game_copy.move_piece(coords, [y as usize, x as usize]) && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c) {
+                        if let Ok(_) = game_copy.move_piece(coords, [y as usize, x as usize])
+                            && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                        {
                             valid_move = true;
                             break;
                         };
@@ -776,12 +777,20 @@ impl Game {
                 }
             }
             Pieces::King(c) => {
-                for pos in Game::get_surrounding_cells(coords).iter().chain([[coords[0], min(coords[1]+2, 7)], [coords[0], max(coords[1] as isize - 2, 0) as usize]].iter()) {
+                for pos in Game::get_surrounding_cells(coords).iter().chain(
+                    [
+                        [coords[0], min(coords[1] + 2, 7)],
+                        [coords[0], max(coords[1] as isize - 2, 0) as usize],
+                    ]
+                    .iter(),
+                ) {
                     let mut game_copy = self.clone();
-                        if let Ok(_) = game_copy.move_piece(coords, *pos) && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c) {
-                            valid_move = true;
-                            break;
-                        };
+                    if let Ok(_) = game_copy.move_piece(coords, *pos)
+                        && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                    {
+                        valid_move = true;
+                        break;
+                    };
                 }
             }
             Pieces::Pawn(c) => {
@@ -797,106 +806,114 @@ impl Game {
 
                     if y >= 0 && y <= 7 && x >= 0 && x <= 7 {
                         let mut game_copy = self.clone();
-                        if let Ok(_) = game_copy.move_piece(coords, [y as usize, x as usize]) && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c) {
+                        if let Ok(_) = game_copy.move_piece(coords, [y as usize, x as usize])
+                            && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                        {
                             game_copy.display();
                             valid_move = true;
                             break;
                         };
                     }
                 }
-            },
+            }
             Pieces::Bishop(c) => {
                 let mut valid_moves = vec![];
                 for inc in 1..=7 {
                     let y = coords[0] as isize;
                     let x = coords[1] as isize;
 
-                    if x+inc >= 0 && x+inc <= 7 && y+inc >= 0 && y+inc <=7 {
-                        valid_moves.push([y+inc, x+inc]);
+                    if x + inc >= 0 && x + inc <= 7 && y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x + inc]);
                     }
-                    if x-inc >= 0 && x-inc <= 7 && y-inc >= 0 && y-inc <=7 {
-                        valid_moves.push([y-inc, x-inc]);
+                    if x - inc >= 0 && x - inc <= 7 && y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x - inc]);
                     }
-                    if x+inc >= 0 && x+inc <= 7 && y-inc >= 0 && y-inc <=7 {
-                        valid_moves.push([y-inc, x+inc]);
+                    if x + inc >= 0 && x + inc <= 7 && y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x + inc]);
                     }
-                    if x-inc >= 0 && x-inc <= 7 && y+inc >= 0 && y+inc <=7 {
-                        valid_moves.push([y+inc, x-inc]);
+                    if x - inc >= 0 && x - inc <= 7 && y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x - inc]);
                     }
                 }
 
                 for mov in valid_moves.iter() {
                     let mut game_copy = self.clone();
-                    if let Ok(_) = game_copy.move_piece(coords, [mov[0] as usize, mov[1] as usize]) && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c) {
+                    if let Ok(_) = game_copy.move_piece(coords, [mov[0] as usize, mov[1] as usize])
+                        && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                    {
                         valid_move = true;
                         break;
                     };
                 }
-            },
+            }
             Pieces::Rook(c) => {
                 let mut valid_moves = vec![];
                 for inc in 1..=7 {
                     let y = coords[0] as isize;
                     let x = coords[1] as isize;
 
-                    if x+inc >= 0 && x+inc <= 7 {
-                        valid_moves.push([y, x+inc]);
+                    if x + inc >= 0 && x + inc <= 7 {
+                        valid_moves.push([y, x + inc]);
                     }
-                    if x-inc >= 0 && x-inc <= 7 {
-                        valid_moves.push([y, x-inc]);
+                    if x - inc >= 0 && x - inc <= 7 {
+                        valid_moves.push([y, x - inc]);
                     }
-                    if y+inc >= 0 && y+inc <= 7 {
-                        valid_moves.push([y+inc, x]);
+                    if y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x]);
                     }
-                    if y-inc >= 0 && y-inc <= 7 {
-                        valid_moves.push([y-inc, x]);
+                    if y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x]);
                     }
                 }
 
                 for mov in valid_moves.iter() {
                     let mut game_copy = self.clone();
-                    if let Ok(_) = game_copy.move_piece(coords, [mov[0] as usize, mov[1] as usize]) && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c) {
+                    if let Ok(_) = game_copy.move_piece(coords, [mov[0] as usize, mov[1] as usize])
+                        && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                    {
                         valid_move = true;
                         break;
                     };
                 }
-            },
+            }
             Pieces::Queen(c) => {
                 let mut valid_moves = vec![];
                 for inc in 1..=7 {
                     let y = coords[0] as isize;
                     let x = coords[1] as isize;
 
-                    if x+inc >= 0 && x+inc <= 7 && y+inc >= 0 && y+inc <=7 {
-                        valid_moves.push([y+inc, x+inc]);
+                    if x + inc >= 0 && x + inc <= 7 && y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x + inc]);
                     }
-                    if x-inc >= 0 && x-inc <= 7 && y-inc >= 0 && y-inc <=7 {
-                        valid_moves.push([y-inc, x-inc]);
+                    if x - inc >= 0 && x - inc <= 7 && y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x - inc]);
                     }
-                    if x+inc >= 0 && x+inc <= 7 && y-inc >= 0 && y-inc <=7 {
-                        valid_moves.push([y-inc, x+inc]);
+                    if x + inc >= 0 && x + inc <= 7 && y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x + inc]);
                     }
-                    if x-inc >= 0 && x-inc <= 7 && y+inc >= 0 && y+inc <=7 {
-                        valid_moves.push([y+inc, x-inc]);
+                    if x - inc >= 0 && x - inc <= 7 && y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x - inc]);
                     }
 
-                    if x+inc >= 0 && x+inc <= 7 {
-                        valid_moves.push([y, x+inc]);
+                    if x + inc >= 0 && x + inc <= 7 {
+                        valid_moves.push([y, x + inc]);
                     }
-                    if x-inc >= 0 && x-inc <= 7 {
-                        valid_moves.push([y, x-inc]);
+                    if x - inc >= 0 && x - inc <= 7 {
+                        valid_moves.push([y, x - inc]);
                     }
-                    if y+inc >= 0 && y+inc <= 7 {
-                        valid_moves.push([y+inc, x]);
+                    if y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x]);
                     }
-                    if y-inc >= 0 && y-inc <= 7 {
-                        valid_moves.push([y-inc, x]);
+                    if y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x]);
                     }
                 }
 
                 for mov in valid_moves.iter() {
                     let mut game_copy = self.clone();
-                    if let Ok(_) = game_copy.move_piece(coords, [mov[0] as usize, mov[1] as usize]) && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c) {
+                    if let Ok(_) = game_copy.move_piece(coords, [mov[0] as usize, mov[1] as usize])
+                        && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                    {
                         valid_move = true;
                         break;
                     };
@@ -905,6 +922,193 @@ impl Game {
             _ => {}
         }
         valid_move
+    }
+
+    fn get_valid_moves(&mut self, coords: [usize; 2]) -> Vec<[usize; 2]> {
+        let piece = self.board[coords[0]][coords[1]];
+
+        if piece == Pieces::Empty {
+            panic!("Error in finding valid move: invalid piece");
+        }
+
+        let mut valid_moves_game: Vec<[usize; 2]> = Vec::new();
+
+        match piece {
+            Pieces::Knight(c) => {
+                for pos in [
+                    (2, 1),
+                    (2, -1),
+                    (-2, 1),
+                    (-2, -1),
+                    (1, -2),
+                    (-1, -2),
+                    (1, 2),
+                    (-1, 2),
+                ]
+                .iter()
+                {
+                    let y = coords[0] as isize + pos.0;
+                    let x = coords[1] as isize + pos.1;
+                    if y >= 0 && y <= 7 && x >= 0 && x <= 7 {
+                        let mut game_copy = self.clone();
+
+                        if let Ok(_) = game_copy.move_piece(coords, [y as usize, x as usize])
+                            && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                        {
+                            valid_moves_game.push([y as usize, x as usize]);
+                        };
+                    }
+                }
+            }
+            Pieces::King(c) => {
+                for pos in Game::get_surrounding_cells(coords).iter().chain(
+                    [
+                        [coords[0], min(coords[1] + 2, 7)],
+                        [coords[0], max(coords[1] as isize - 2, 0) as usize],
+                    ]
+                    .iter(),
+                ) {
+                    let mut game_copy = self.clone();
+                    if let Ok(_) = game_copy.move_piece(coords, *pos)
+                        && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                    {
+                        valid_moves_game.push(*pos);
+                    };
+                }
+            }
+            Pieces::Pawn(c) => {
+                let moves;
+                if c {
+                    moves = [[1, 0], [2, 0], [1, 1], [1, -1]];
+                } else {
+                    moves = [[-1, 0], [-2, 0], [-1, -1], [-1, 1]];
+                }
+                for pos in moves.iter() {
+                    let x = coords[1] as isize + pos[1];
+                    let y = coords[0] as isize + pos[0];
+
+                    if y >= 0 && y <= 7 && x >= 0 && x <= 7 {
+                        let mut game_copy = self.clone();
+                        if let Ok(_) = game_copy.move_piece(coords, [y as usize, x as usize])
+                            && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                        {
+                            valid_moves_game.push([y as usize, x as usize]);
+                        };
+                    }
+                }
+            }
+            Pieces::Bishop(c) => {
+                let mut valid_moves = vec![];
+                for inc in 1..=7 {
+                    let y = coords[0] as isize;
+                    let x = coords[1] as isize;
+
+                    if x + inc >= 0 && x + inc <= 7 && y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x + inc]);
+                    }
+                    if x - inc >= 0 && x - inc <= 7 && y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x - inc]);
+                    }
+                    if x + inc >= 0 && x + inc <= 7 && y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x + inc]);
+                    }
+                    if x - inc >= 0 && x - inc <= 7 && y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x - inc]);
+                    }
+                }
+
+                for mov in valid_moves.iter() {
+                    let mut game_copy = self.clone();
+                    if let Ok(_) = game_copy.move_piece(coords, [mov[0] as usize, mov[1] as usize])
+                        && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                    {
+                        valid_moves_game.push([mov[0] as usize, mov[1] as usize]);
+                    };
+                }
+            }
+            Pieces::Rook(c) => {
+                let mut valid_moves = vec![];
+                for inc in 1..=7 {
+                    let y = coords[0] as isize;
+                    let x = coords[1] as isize;
+
+                    if x + inc >= 0 && x + inc <= 7 {
+                        valid_moves.push([y, x + inc]);
+                    }
+                    if x - inc >= 0 && x - inc <= 7 {
+                        valid_moves.push([y, x - inc]);
+                    }
+                    if y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x]);
+                    }
+                    if y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x]);
+                    }
+                }
+
+                for mov in valid_moves.iter() {
+                    let mut game_copy = self.clone();
+                    if let Ok(_) = game_copy.move_piece(coords, [mov[0] as usize, mov[1] as usize])
+                        && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                    {
+                        valid_moves_game.push([mov[0] as usize, mov[1] as usize]);
+                    };
+                }
+            }
+            Pieces::Queen(c) => {
+                let mut valid_moves = vec![];
+                for inc in 1..=7 {
+                    let y = coords[0] as isize;
+                    let x = coords[1] as isize;
+
+                    if x + inc >= 0 && x + inc <= 7 && y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x + inc]);
+                    }
+                    if x - inc >= 0 && x - inc <= 7 && y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x - inc]);
+                    }
+                    if x + inc >= 0 && x + inc <= 7 && y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x + inc]);
+                    }
+                    if x - inc >= 0 && x - inc <= 7 && y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x - inc]);
+                    }
+
+                    if x + inc >= 0 && x + inc <= 7 {
+                        valid_moves.push([y, x + inc]);
+                    }
+                    if x - inc >= 0 && x - inc <= 7 {
+                        valid_moves.push([y, x - inc]);
+                    }
+                    if y + inc >= 0 && y + inc <= 7 {
+                        valid_moves.push([y + inc, x]);
+                    }
+                    if y - inc >= 0 && y - inc <= 7 {
+                        valid_moves.push([y - inc, x]);
+                    }
+                }
+
+                for mov in valid_moves.iter() {
+                    let mut game_copy = self.clone();
+                    if let Ok(_) = game_copy.move_piece(coords, [mov[0] as usize, mov[1] as usize])
+                        && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
+                    {
+                        valid_moves_game.push([mov[0] as usize, mov[1] as usize]);
+                    };
+                }
+            }
+            _ => {}
+        }
+        valid_moves_game
+    }
+    fn play_ai(&mut self, c: bool) -> [[usize; 2]; 2] {
+        let mut moves = Vec::new();
+
+        for piece in self.get_pieces(c) {
+            moves.extend(self.get_valid_moves(piece).iter().map(|p| [piece, *p]));
+        }
+
+        *moves.choose(&mut rand::rng()).unwrap()
     }
 }
 
@@ -986,7 +1190,7 @@ fn main() {
     let mut end = false;
     game.init();
 
-    while !end {
+    loop {
         match game.check_game_end() {
             State::Continue | State::WhiteCheck | State::BlackCheck => {}
             _ => end = true,
@@ -1003,19 +1207,30 @@ fn main() {
 
         error = String::new();
 
-        let mut mov = String::new();
-        std::io::stdin().read_line(&mut mov).unwrap();
-        if mov.trim().len() == 1 {
-            game.promotion = mov.chars().nth(0).unwrap();
-            error = format!("Updated promotion to '{}'", mov.trim());
-            continue;
+        if end {
+            break;
         }
 
-        let [i, f] = Game::parse_move(mov.trim()).unwrap();
+        if !game.turn {
+            let [i, f] = game.play_ai(false);
+            game.move_piece(i, f).unwrap_or_else(|e| {
+                error = e;
+            });
+        } else {
+            let mut mov = String::new();
+            std::io::stdin().read_line(&mut mov).unwrap();
+            if mov.trim().len() == 1 {
+                game.promotion = mov.chars().nth(0).unwrap();
+                error = format!("Updated promotion to '{}'", mov.trim());
+                continue;
+            }
 
-        game.move_piece(i, f).unwrap_or_else(|e| {
-            error = e;
-        });
+            let [i, f] = Game::parse_move(mov.trim()).unwrap();
+
+            game.move_piece(i, f).unwrap_or_else(|e| {
+                error = e;
+            });
+        }
 
         game_state = game.check_game_end().symbol();
     }
