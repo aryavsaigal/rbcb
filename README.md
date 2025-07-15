@@ -1,5 +1,5 @@
 # really bad chess board
-inefficient and barely working chess board and move validator written in rust
+inefficient and barely working chess board and move validator written in rust (now with AI!)
 
 try it at your own risk and dont use this in place of a better implemented and updated chess board validator
 
