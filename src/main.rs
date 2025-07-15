@@ -1,4 +1,4 @@
-use rand::{rng, seq::{IndexedRandom, SliceRandom}};
+use rand::{rng, seq::SliceRandom};
 use std::{cmp::{max, min}, isize};
 
 #[derive(Clone)]
@@ -21,7 +21,7 @@ impl Game {
             turn: true,
             en_passant: vec![],
             turn_count: 0,
-            counter: 0,
+            counter: 1,
         }
     }
 
@@ -33,7 +33,7 @@ impl Game {
                     .unwrap()
                     .to_string()
                     .parse::<usize>()
-                    .unwrap()
+                    .unwrap_or(1)
                     - 1,
                 match m.chars().nth(0).unwrap() {
                     'a' => 0,
@@ -44,7 +44,7 @@ impl Game {
                     'f' => 5,
                     'g' => 6,
                     'h' => 7,
-                    _ => return None,
+                    _ => 0,
                 },
             ])
         }
@@ -193,6 +193,7 @@ impl Game {
                                     self.turn_count += 1;
                                     self.turn_count %= 2;
                                     self.turn = !self.turn;
+                                    self.counter += 1;
                                     return Ok(());
                                 } else if self.castle[0][1]
                                     && f == [0, 2]
@@ -207,6 +208,7 @@ impl Game {
                                     self.turn_count += 1;
                                     self.turn_count %= 2;
                                     self.turn = !self.turn;
+                                    self.counter += 1;
                                     return Ok(());
                                 }
                             } else if !self.check(self.find(Pieces::King(c)).unwrap(), c) {
@@ -223,6 +225,7 @@ impl Game {
                                     self.turn_count += 1;
                                     self.turn_count %= 2;
                                     self.turn = !self.turn;
+                                    self.counter += 1;
                                     return Ok(());
                                 } else if self.castle[1][1]
                                     && f == [7, 2]
@@ -237,6 +240,7 @@ impl Game {
                                     self.turn_count += 1;
                                     self.turn_count %= 2;
                                     self.turn = !self.turn;
+                                    self.counter += 1;
                                     return Ok(());
                                 }
                             }
@@ -322,6 +326,7 @@ impl Game {
         self.turn = !self.turn;
         self.turn_count += 1;
         self.turn_count %= 2;
+        self.counter += 1;
 
         Ok(())
     }
@@ -1311,7 +1316,6 @@ fn main() {
     game.init();
 
     loop {
-        game.counter+=1;
         match game.check_game_end() {
             State::Continue | State::WhiteCheck | State::BlackCheck => {}
             _ => end = true,
@@ -1347,7 +1351,13 @@ fn main() {
                 continue;
             }
 
-            let [i, f] = Game::parse_move(mov.trim()).unwrap();
+            let [i, f] = match Game::parse_move(mov.trim()) {
+                Ok(val) => val,
+                Err(s) => {
+                    error = s;
+                    continue;
+                }
+            };
             // let [i, f] = game.play_ai(true);
             game.move_piece(i, f).unwrap_or_else(|e| {
                 error = e;
