@@ -1,5 +1,5 @@
-use rand::seq::IndexedRandom;
-use std::cmp::{max, min};
+use rand::{rng, seq::{IndexedRandom, SliceRandom}};
+use std::{cmp::{max, min}, isize};
 
 #[derive(Clone)]
 struct Game {
@@ -9,6 +9,7 @@ struct Game {
     turn: bool,
     en_passant: Vec<usize>,
     turn_count: usize,
+    counter: usize
 }
 
 impl Game {
@@ -20,6 +21,7 @@ impl Game {
             turn: true,
             en_passant: vec![],
             turn_count: 0,
+            counter: 0,
         }
     }
 
@@ -677,6 +679,23 @@ impl Game {
         }
     }
 
+    fn check_remaining_pieces(&mut self) -> State {
+        let mut pieces = Vec::new();
+        for row in self.board.iter() {
+            for piece in row {
+                if *piece != Pieces::Empty {
+                    pieces.push(*piece);
+                }
+            }
+        }
+
+        if pieces.len() == 2 {
+            return State::Draw;
+        }
+
+        State::Continue
+    }
+
     fn check_game_end(&mut self) -> State {
         let king_white = self.find(Pieces::King(true)).unwrap();
         let king_black = self.find(Pieces::King(false)).unwrap();
@@ -684,16 +703,19 @@ impl Game {
         let white_check = self.check(king_white, true);
         let black_check = self.check(king_black, false);
 
+        let crp = self.check_remaining_pieces() ;
+
+        match crp {
+            State::Continue => {},
+            _ => return crp
+        };
+
         let moves_white = self
             .get_pieces(true)
             .iter()
             .any(|piece| self.find_valid_move(*piece));
         let moves_black = self.get_pieces(false).iter().any(|piece| {
-            if self.find_valid_move(*piece) {
-                println!("{:?}", piece);
-                return true;
-            }
-            false
+            self.find_valid_move(*piece)
         });
 
         if !moves_white && self.turn {
@@ -809,7 +831,6 @@ impl Game {
                         if let Ok(_) = game_copy.move_piece(coords, [y as usize, x as usize])
                             && !game_copy.check(game_copy.find(Pieces::King(c)).unwrap(), c)
                         {
-                            game_copy.display();
                             valid_move = true;
                             break;
                         };
@@ -1102,13 +1123,110 @@ impl Game {
         valid_moves_game
     }
     fn play_ai(&mut self, c: bool) -> [[usize; 2]; 2] {
+        let mut best_score = isize::MIN;
+        let mut best_mov: Option<[[usize;2];2]> = None;
+
         let mut moves = Vec::new();
 
         for piece in self.get_pieces(c) {
             moves.extend(self.get_valid_moves(piece).iter().map(|p| [piece, *p]));
         }
 
-        *moves.choose(&mut rand::rng()).unwrap()
+        moves.shuffle(&mut rng());
+
+        for [i, f] in &moves {
+            let mut game_clone = self.clone();
+            game_clone.move_piece(*i, *f).unwrap();
+            let score = Game::minimax(&mut game_clone, 3, isize::MIN, isize::MAX, !c, c);
+
+            if score > best_score {
+                best_score = score;
+                best_mov = Some([*i, *f]);
+            }
+        }
+
+        best_mov.unwrap()
+    }
+
+    fn is_game_over(&mut self) -> bool {
+        match self.check_game_end() {
+            State::WhiteCheckmate | State::WhiteStalemate | State::BlackCheckmate | State::BlackStalemate | State::Draw => true,
+            _ => false,
+        }
+    }
+
+    fn count_board(&mut self, c: bool) -> isize {
+        let mut score = 0;
+
+        let mut pieces = self.get_pieces(c);
+        pieces.append(&mut self.get_pieces(!c));
+
+        for coord in pieces {
+            let piece = self.board[coord[0]][coord[1]];
+            score += (match piece {
+                Pieces::King(_) => 900,
+                Pieces::Queen(_) => 90,
+                Pieces::Rook(_) => 50,
+                Pieces::Bishop(_) => 30,
+                Pieces::Knight(_) => 30,
+                Pieces::Pawn(_) => 10,
+                Pieces::Empty => 0
+            }) * (if piece.colour().unwrap() == c { 1 } else { -1 })
+        }
+
+        score += match self.check_game_end() {
+            State::WhiteCheckmate => if c { -10000 } else { 10000 },
+            State::BlackCheckmate => if !c { -10000 } else { 10000 },
+            State::BlackStalemate | State::WhiteStalemate => -50,
+            State::WhiteCheck => if c { -80 } else { 80 },
+            State::BlackCheck => if !c { -80 } else { 80 },
+            _ => 0
+        };
+
+        score
+    }
+
+    fn minimax(game: &mut Game, depth: usize, mut alpha: isize, mut beta: isize, c: bool, maximising_player: bool) -> isize {
+        if depth == 0 || game.is_game_over() {
+            return game.count_board(maximising_player);
+        }
+        
+        let mut moves = Vec::new();
+
+        for piece in game.get_pieces(c) {
+            moves.extend(game.get_valid_moves(piece).iter().map(|p| [piece, *p]));
+        }
+
+        moves.shuffle(&mut rng());
+
+        if c == maximising_player {
+            let mut max_eval = isize::MIN;
+            for [i, f] in moves {
+                let mut game_clone = game.clone();
+                game_clone.move_piece(i, f).unwrap();
+                let eval = Game::minimax(&mut game_clone, depth-1, alpha, beta, !c, maximising_player);
+                max_eval = max(max_eval, eval);
+                alpha = max(alpha, eval);
+                if beta <= alpha {
+                    break;
+                }
+            }
+            return max_eval
+        }
+        else {
+            let mut min_eval = isize::MAX;
+            for [i, f] in moves {
+                let mut game_clone = game.clone();
+                game_clone.move_piece(i, f).unwrap();
+                let eval = Game::minimax(&mut game_clone, depth-1, alpha, beta, !c, maximising_player);
+                min_eval = min(min_eval, eval);
+                beta = min(beta, eval);
+                if beta <= alpha {
+                    break;
+                }
+            }
+            return min_eval
+        }
     }
 }
 
@@ -1121,6 +1239,7 @@ enum State {
     WhiteCheck,
     BlackCheck,
     Continue,
+    Draw
 }
 
 impl State {
@@ -1133,6 +1252,7 @@ impl State {
             State::WhiteCheck => "White is in check",
             State::BlackCheck => "Black is in check",
             State::Continue => "Game continues",
+            State::Draw => "Draw"
         })
         .to_string()
     }
@@ -1191,6 +1311,7 @@ fn main() {
     game.init();
 
     loop {
+        game.counter+=1;
         match game.check_game_end() {
             State::Continue | State::WhiteCheck | State::BlackCheck => {}
             _ => end = true,
@@ -1199,7 +1320,8 @@ fn main() {
         println!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         game.display();
         println!(
-            "Turn: {} | Status: {} | Game State: {}",
+            "{}. Turn: {} | Status: {} | Game State: {}",
+            game.counter,
             if game.turn { "White" } else { "Black" },
             error,
             game_state
@@ -1226,7 +1348,7 @@ fn main() {
             }
 
             let [i, f] = Game::parse_move(mov.trim()).unwrap();
-
+            // let [i, f] = game.play_ai(true);
             game.move_piece(i, f).unwrap_or_else(|e| {
                 error = e;
             });
