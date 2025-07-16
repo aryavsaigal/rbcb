@@ -676,12 +676,16 @@ impl Game {
     fn display(&self) {
         let mut board = self.board;
         board.reverse();
-        for row in board {
-            for piece in row {
-                print!("\x1b[40;37m{} \x1b[0m", piece.symbol());
+        for (i, row) in board.iter().enumerate() {
+            print!("\x1b[38;5;15m\x1b[48;5;236m{} \x1b[0m", 8-i);
+            for (j, piece) in row.iter().enumerate() {
+                print!("{}{} \x1b[0m", if (j % 2 == 0) ^ (i % 2 == 0) { "\x1b[48;5;250m" } else { "\x1b[48;5;240m" }, piece.symbol());
             }
             print!("\n");
         }
+        print!("\x1b[38;5;15m\x1b[48;5;236m ");
+        for c in 'a'..='h' { print!("\x1b[38;5;15m\x1b[48;5;236m {}\x1b[0m", c); }
+        print!("\x1b[38;5;15m\x1b[48;5;236m \x1b[0m\n")
     }
 
     fn check_remaining_pieces(&mut self) -> State {
@@ -1182,9 +1186,9 @@ impl Game {
         score += match self.check_game_end() {
             State::WhiteCheckmate => if c { -10000 } else { 10000 },
             State::BlackCheckmate => if !c { -10000 } else { 10000 },
-            State::BlackStalemate | State::WhiteStalemate => -50,
-            State::WhiteCheck => if c { -80 } else { 80 },
-            State::BlackCheck => if !c { -80 } else { 80 },
+            State::BlackStalemate | State::WhiteStalemate | State::Draw => -15,
+            State::WhiteCheck => if c { -20 } else { 20 },
+            State::BlackCheck => if !c { -20 } else { 20 },
             _ => 0
         };
 
@@ -1278,17 +1282,17 @@ enum Pieces {
 impl Pieces {
     fn symbol(&self) -> String {
         (match self {
-            Pieces::Rook(false) => "♖",
+            Pieces::Rook(false) => "\x1b[38;5;16m♜",
             Pieces::Rook(true) => "♜",
-            Pieces::Bishop(false) => "♗",
+            Pieces::Bishop(false) => "\x1b[38;5;16m♝",
             Pieces::Bishop(true) => "♝",
-            Pieces::Knight(false) => "♘",
+            Pieces::Knight(false) => "\x1b[38;5;16m♞",
             Pieces::Knight(true) => "♞",
-            Pieces::Queen(false) => "♕",
+            Pieces::Queen(false) => "\x1b[38;5;16m♛",
             Pieces::Queen(true) => "♛",
-            Pieces::King(false) => "♔",
+            Pieces::King(false) => "\x1b[38;5;16m♚",
             Pieces::King(true) => "♚",
-            Pieces::Pawn(false) => "♙",
+            Pieces::Pawn(false) => "\x1b[38;5;16m♟",
             Pieces::Pawn(true) => "♟",
             Pieces::Empty => " ",
         })
