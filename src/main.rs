@@ -1142,18 +1142,17 @@ impl Game {
         }
 
         moves.shuffle(&mut rng());
-
+        let mut permutations = 0;
         for [i, f] in &moves {
             let mut game_clone = self.clone();
             game_clone.move_piece(*i, *f).unwrap();
-            let score = Game::minimax(&mut game_clone, 3, isize::MIN, isize::MAX, !c, c);
-
+            let score = Game::minimax(&mut game_clone, 4, isize::MIN, isize::MAX, !c, c, &mut permutations);
             if score > best_score {
                 best_score = score;
                 best_mov = Some([*i, *f]);
             }
         }
-
+        println!("Permutations: {}", permutations);
         best_mov.unwrap()
     }
 
@@ -1195,7 +1194,8 @@ impl Game {
         score
     }
 
-    fn minimax(game: &mut Game, depth: usize, mut alpha: isize, mut beta: isize, c: bool, maximising_player: bool) -> isize {
+    fn minimax(game: &mut Game, depth: usize, mut alpha: isize, mut beta: isize, c: bool, maximising_player: bool, permutations: &mut usize) -> isize {
+        *permutations += 1;
         if depth == 0 || game.is_game_over() {
             return game.count_board(maximising_player);
         }
@@ -1213,7 +1213,7 @@ impl Game {
             for [i, f] in moves {
                 let mut game_clone = game.clone();
                 game_clone.move_piece(i, f).unwrap();
-                let eval = Game::minimax(&mut game_clone, depth-1, alpha, beta, !c, maximising_player);
+                let eval = Game::minimax(&mut game_clone, depth-1, alpha, beta, !c, maximising_player, permutations);
                 max_eval = max(max_eval, eval);
                 alpha = max(alpha, eval);
                 if beta <= alpha {
@@ -1227,7 +1227,7 @@ impl Game {
             for [i, f] in moves {
                 let mut game_clone = game.clone();
                 game_clone.move_piece(i, f).unwrap();
-                let eval = Game::minimax(&mut game_clone, depth-1, alpha, beta, !c, maximising_player);
+                let eval = Game::minimax(&mut game_clone, depth-1, alpha, beta, !c, maximising_player, permutations);
                 min_eval = min(min_eval, eval);
                 beta = min(beta, eval);
                 if beta <= alpha {
