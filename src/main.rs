@@ -193,7 +193,6 @@ impl Game {
                                     self.turn_count += 1;
                                     self.turn_count %= 2;
                                     self.turn = !self.turn;
-                                    self.counter += 1;
                                     return Ok(());
                                 } else if self.castle[0][1]
                                     && f == [0, 2]
@@ -208,7 +207,6 @@ impl Game {
                                     self.turn_count += 1;
                                     self.turn_count %= 2;
                                     self.turn = !self.turn;
-                                    self.counter += 1;
                                     return Ok(());
                                 }
                             } else if !self.check(self.find(Pieces::King(c)).unwrap(), c) {
@@ -323,10 +321,10 @@ impl Game {
             }
         }
 
+       if !self.turn { self.counter += 1; }
         self.turn = !self.turn;
         self.turn_count += 1;
         self.turn_count %= 2;
-        self.counter += 1;
 
         Ok(())
     }
