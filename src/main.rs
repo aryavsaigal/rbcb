@@ -679,7 +679,7 @@ impl Game {
         for (i, row) in board.iter().enumerate() {
             print!("\x1b[38;5;15m\x1b[48;5;236m{} \x1b[0m", 8-i);
             for (j, piece) in row.iter().enumerate() {
-                print!("{}{} \x1b[0m", if (j % 2 == 0) ^ (i % 2 == 0) { "\x1b[48;5;250m" } else { "\x1b[48;5;240m" }, piece.symbol());
+                print!("{}{} \x1b[0m", if (j % 2 == 1) ^ (i % 2 == 0) { "\x1b[48;5;250m" } else { "\x1b[48;5;240m" }, piece.symbol());
             }
             print!("\n");
         }
